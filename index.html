@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en-us">
+	<head>
+		<script>
+		  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+		  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+		  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+		  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+		  ga('create', 'UA-61540916-1', 'auto');
+		  ga('send', 'pageview');
+
+		</script>
+
+		<script src="javascript/jquery-2.1.3.min.js"></script>
+
+		<script type="text/javascript">
+		$(document).ready(function() {
+			$("#body").load("competition.html");
+
+			$("#progress").click(function() {
+				$("#body").load("progress.html");
+			});
+      $("#competition").click(function() {
+        $("#body").load("competition.html");
+      });
+
+      $("#writeup").click(function() {
+        $("#body").load("writeup.html");
+      });
+
+			$("#proposal").click(function() {
+				$("#body").load("proposal.html");
+			});
+		});
+
+		</script>
+
+    <meta charset="UTF-8">
+    <title>CubeRover</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" type="text/css" href="stylesheets/normalize.css" media="screen">
+    <link href='http://fonts.googleapis.com/css?family=Open+Sans:400,700' rel='stylesheet' type='text/css'>
+    <link rel="stylesheet" type="text/css" href="stylesheets/stylesheet.css" media="screen">
+    <link rel="stylesheet" type="text/css" href="stylesheets/github-light.css" media="screen">
+  </head>
+  <body>
+    <section class="page-header">
+      <h1 class="project-name">CubeRover</h1>
+      <h2 class="project-tagline">15-418 Final Project</h2>
+      <a id="proposal" href="#" class="btn">Proposal</a>
+      <a id="competition" href="#" class="btn">Parallel Competition</a>
+      <a id="writeup" href="#" class="btn">Writeup</a>
+      <a id="progress" href="#" class="btn">Project Checkpoint</a>
+      <a target="_blank" href="https://github.com/uprasad/CubeRover" class="btn">View on GitHub</a>
+	  <!--
+      <a href="https://github.com/uprasad/CubeRover/zipball/master" class="btn">Download .zip</a>
+      <a href="https://github.com/uprasad/CubeRover/tarball/master" class="btn">Download .tar.gz</a>
+	  -->
+    </section>
+    <style>
+    p.small {
+      line-height: 97%;
+    }
+    h3.small {
+      padding: 0;
+    }
+    
+    </style>
+
+	<div id="body">
+	</div>
+
+  </body>
+</html>
+

@@ -1,0 +1,167 @@
+
+
+    <section class="main-content">
+      <h2>
+<a id="welcome-to-github-pages" class="anchor" href="#welcome-to-github-pages" aria-hidden="true"><span class="octicon octicon-link"></span></a><b>Competition</b></h2>
+
+<h3><b>The CubeRover</b></h3> 
+
+<p> The CubeRover is a self-driving Moon rover. The goal of the CubeRover is to navigate a two-mile round trip on a feature-intermittent, self similar terrain (the Moon) on a single charge. While the CubeRover navigates its two-mile route from the Lander and back, it needs to be aware of its location relative to the Lander at all times.
+</p>
+
+<h3> <b>Introduction</b> </h3>
+<p>
+  <b>Visual Odometry</b> is the process of determining the position and orientation of the robot using camera images. This is also known as camera tracking. As the robot moves in an environment, it captures images of its environment, processes them on the go and computes its position and orientation. This is usually done by computing the image features and matching these features across the images. The number of features extracted from an image is usually several orders lesser than the number of pixels in the image. Using image features to do this is known as Sparse Visual Odometry.
+Dense Visual Odometry on the other hand uses all the pixels in the image and makes comparisons against every pixel in two consecutive images. Dense visual odometry gives better results. Most vision algorithms are computationally intensive, hence sparse is preferred to dense to save on the computation time.
+</p>
+<p>
+<b>Goal:</b> We would like to do real-time camera tracking (which would require processing the images captured at 30Hz). The GPU features of NVidia’s Tegra K1 are used to implement a parallel version of Dense Visual Odometry.
+</p>
+
+<h3> <b>Algorithm</b> </h3>
+<p>
+  We explain the algorithm we apply to estimate the change in camera pose and orientation between two frames of the input image stream.
+</p>
+
+<h3>Input</h3>
+<p> To our program we have as input two pairs of images, two different RGB frames (converted to grayscale) and their two depth equivalents. The depth images have been captured from the Kinect. Each pixel in the depth image tells us how far that pixel is from the camera in millimeters. We normalize this to tell us the depths in meters.
+</p>
+<h3>
+<!--<a id="designer-templates" class="anchor" href="#designer-templates" aria-hidden="true"><span class="octicon octicon-link"></span></a>Pre-process Depth</h3> -->
+
+  <h3>Build Image Pyramids</h3>
+<p>
+  We build “pyramids” of the two grayscale and depth image pairs. The bottom-most level (level 0) of the pyramid consist of the whole images. Level i consists of a blurred and down-sampled version of level i-1. This is done so that we can track all magnitudes of motion, coarse to fine. 
+ <div class = "box">
+    <img src="img/rgb0.png" />
+  </div>
+  <div class = "box">
+    <img src="img/rgb1.png" />
+  </div>
+
+</p>
+
+  <h3>Pre-process Depth</h3>
+
+<p>
+  We preprocess the depth images to only consider pixels that are within a particular range of depths. For example, we ignore pixels that are too far away to affect tracking, or that are so far away that they may be obfuscated by other objects.
+  <div class = "box">
+    <img src="img/depth0.png" />
+  </div>
+  <div class = "box">
+    <img src="img/depth1.png" />
+  </div>
+</p>
+
+
+  <h3>Compute Image Derivatives</h3>
+<p>
+For each level of the grayscale images, we compute the gradients of the images in the x- and y- directions using the Sobel operator, which is a common filter used for edge detection. We threshold the image derivatives to decide which pixels have moved considerably, and only consider those pixels for measure correspondences between the two images. 
+</p>
+
+<div class = "box">
+    <img src="img/dx1.png" />
+</div>
+<div class = "box">
+    <img src="img/dy1.png" />
+</div>
+
+
+ <h3>Compute Textured Mask</h3>
+<p>
+The textured mask of each image is the set of pixels whose gradients satisfy a threshold. We only consider these pixels when computing correspondences between the grayscale images. 
+</p>
+
+<div class = "box">
+    <img src="img/texturedMask.png" />
+</div>
+
+ <h3>Generate 3D point cloud</h3>
+<p>
+Using the image coordinates and the true depth values, we can construct the 3D coordinates corresponding the each pixel in the image by doing an inverse projection. We apply our current estimate of the rotation and translation to the 3D point cloud, and project the new cloud back onto the second image. We attempt to minimize the difference between our “estimated second image” and the true second image. 
+</p>
+
+<h3>The estimation algorithm</h3>
+<p>
+  In the main algorithm, we loop over the different pyramid levels, starting from the coarsest, and repeatedly do the following:
+  <ol>
+    <li>Compute correspondences between the two images based on our current estimate of the rotation and translation matrix.</li>
+    <li>Use these correspondences to refine the estimate of the rotation and translation matrix.</li>
+  </ol>
+</p>
+
+<h3>Computing correspondences</h3>
+<p>
+  Each call to count correspondences does the following:
+  <ol>
+    <li>Inverse project depth images to get the true 3D coordinates of the image pixels (only those pixels that satisfy a minimum gradient).</li>
+    <li>Transform the 3D cloud with the current motion parameters.</li>
+    <li>Project the transformed 3D points onto the second depth image.</li>
+    <li>Store all the pixel mappings as correspondences.</li>
+  </ol>
+</p>
+
+
+<h3> Refining the motion parameters (ksi: &xi;) </h3>
+  <p> Each call to recompute Ksi does the following:
+     <ol>
+    <li>Calculate the squared difference between the two grayscale images at the computed points of correspondence.</li>
+    <li>Use the derivatives, the cloud points and the camera properties to solve linear equations over the sets of correspondences.</li>
+  </ol>
+  </p>
+
+<h3> Performance </h3>
+
+<div class = "box">
+    <img src="img/warpResult.png" />
+</div>
+
+<p>
+  The above set of images shows the result of using the estimated motion parameters to warp the image at time <i>t</i>. We can see that from time <i>t</i> to time <i>t+1</i> the camera has been translated to the bottom and left. The warped image accurately reflects that motion.
+</p>
+
+<div>
+  <img src="img/resultsInd.png" />
+</div>
+
+<p>
+  The bar graph above compares the performances the parallel and serial versions of a few parts of the algorithm. The serial version has been taken from the contrib/ module of OpenCV. Our parallel algorithm is also based on it.
+</p>
+
+<p>
+  'Compute correspondences' is the step of the algorithm that uses inverse projections and gradient thresholding to compute a set of correspondences. These correspondences are then used later in the 'Sigma' step of the algorithm to calculate the squared error between the two images. The results of 'Sigma' and 'Compute correspondences' is then encoded as a set of linear equations, which are solved in the 'Rigid Body' step to compute the rigid body transform between two camera views.
+</p>
+
+<div align="center">
+  <img src="img/results.png" />
+</div>
+
+<p>
+  This bar graph compares the total running times of the two algorithms. Estimating the rigid body transform between two frames takes nearly 800 milliseconds with the serial version, which means that we can process image streams at about 1.2 frames per second.
+</p>
+
+<p>
+  We have managed to improve this frame rate to about 2 frames per second. This is far from real-time, but is adequate for several slow moving robots. The CubeRover, for example, moves at 15 centimeters per second. Moreover, we feel that without significant changes to the algorithm itself, it is very challenging to extract more parallelism out of Dense RGB-D odometry, due in no small part to the inherent serial nature of the algorithm (iterative refinement).
+</p>
+
+<p>
+  We will present cogent arguments defending this stance in our final presentation.
+</p>
+
+<h3>
+<a id="authors-and-contributors" class="anchor" href="#authors-and-contributors" aria-hidden="true"><span class="octicon octicon-link"></span></a>References<a name="ref"></a></h3>
+<ol type="1">
+<li>Engel, J., Sturm, J., Cremers, D.: Semi-dense visual odometry for a monocular camera. In: Intl. Conf. on Computer Vision (ICCV) (2013)</li>
+<li>T. Whelan, H. Johannsson, M. Kaess, J. Leonard, and J. McDonald, "Robust real-time visual odometry for dense RGB-D mapping," in IEEE Intl. Conf. on Robotics and Automation (ICRA), Karlsruhe, Germany, 2013.</li>
+<li>F. Steinbrücker, J. Sturm, and D. Cremers, "Real-time visual odometry from dense RGB-D images," in ICCV Workshop on Live Dense Reconstruction with Moving Cameras, 2011</li>
+<li>Kerl, C., Sturm, J., Cremers, D.: Dense visual SLAM for RGB-D cameras. In: Intl. Conf. on Intelligent Robot Systems (IROS) (2013)</li>
+<li>J. Engel, T. Scho ̈ps, and D. Cremers. LSD-SLAM: Large-scale direct monocular SLAM. In European Conference on Computer Vision (ECCV), September 2014.</li>
+</ol>
+
+      <footer class="site-footer">
+        <span class="site-footer-owner"><a href="https://github.com/uprasad/CubeRover">CubeRover</a> is maintained by <a href="https://github.com/uprasad">uprasad</a> & <a href="https://github.com/nikithashr">nikithashr</a>.</span>
+
+        <span class="site-footer-credits">This page was generated by <a href="https://pages.github.com">GitHub Pages</a> using the <a href="https://github.com/jasonlong/cayman-theme">Cayman theme</a> by <a href="https://twitter.com/jasonlong">Jason Long</a>.</span>
+      </footer>
+
+    </section>
