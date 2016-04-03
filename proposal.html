@@ -4,65 +4,50 @@
       <h2>
 <a id="welcome-to-github-pages" class="anchor" href="#welcome-to-github-pages" aria-hidden="true"><span class="octicon octicon-link"></span></a><b>Proposal</b></h2>
 
-<h3>Houston, We Have a Problem!</h3>
- 
+<h3>Summary</h3>
 
-  
 
-<p> The CubeRover is a self-driving Moon rover. The goal of the CubeRover is to navigate a two-mile round trip on a feature-intermittent, self similar terrain (the Moon) on a single charge. While the CubeRover navigates its two-mile route from the Lander and back, it needs to be aware of its location relative to the Lander at all times.
-In robotics, simultaneous localization and mapping (SLAM) is the computational problem of constructing or updating a map of an unknown environment while simultaneously tracking the robot’s location within it. Although there are multiple approaches to do this, SLAM pertinent to the CubeRover involves: </p>
-<ul> 
-  <li> real-time feature tracking to recover the three dimensional structure of its environment. </li>
-  <li> visual odometry - the process of determining the position and orientation of a robot by analyzing the associated camera images. </li>
-  <li> loop closure - update the global map when the CubeRover returns to an already visited location, especially the Lander. </li>
-</ul>
+
+
+<p>Geodesics in Heat is a new approach to computing distance based on heat flow picked up by Professor Crane in 2013[1]. Though its performance exhibits a lower computational cost than older methods like fast marching and exact polyhedral  distance, a paralleled implementation is still vacant. In this project, I am going to accomplish a parallel implementation in Geodesics in Heat on the NVIDIA GPUs in the lab.
+ </p>
+
 <h3>
-<a id="designer-templates" class="anchor" href="#designer-templates" aria-hidden="true"><span class="octicon octicon-link"></span></a>Hardware</h3>
-
-<ul> 
-  <li> NVIDIA Tegra K1 </li>
-  <li> Axis 212 PTZ Network Camera with a CoastalOpt 185 lens (Fish eye lens) </li>
-  <li> Kinect for Xbox 360 </li>
+<a id="designer-templates" class="anchor" href="#designer-templates" aria-hidden="true"><span class="octicon octicon-link"></span></a>Background</h3>
+<p>The Geodesics in Heat problem could be divided into 3 basic steps for a fixed time t:
+</p>
+<ul>
+  <li> Integrate the heat flow for some fixed time t</li>
+  <li> Evaluate the vector field</li>
+  <li> Solve the Poisson equation </li>
 </ul>
+<p>Among which the first part heat equation and the third part Poisson equation are both linear equations, and therefore could be solved by plugging into a paralleled linear solver. Various paralleled solvers could be adopted according to the inputs. For example the solver for a point cloud may be different from that of triangle meshes. Our goal, therefore, is to find all those paralleled solvers for inputs of different types.
+</p>
 
 <h3>
 <a id="rather-drive-stick" class="anchor" href="#rather-drive-stick" aria-hidden="true"><span class="octicon octicon-link"></span></a>The Challenge</h3>
-<ul style="list-style: none;">
-  <li><h4>Problem complexity</h4>
-    <p>SLAM algorithms are tailored to the available resources, and hence are not aimed at perfection, but at operational compliance. SLAM will always use several different types of sensors, and the powers and limits of various sensor types have been a major driver of new algorithms. Researchers and experts in artificial intelligence have struggled to solve the SLAM problem in practical settings: that is, it required a great deal of computational power to sense a sizable area and process the resulting data to both map and localize.  Almost all the current approaches cannot generate maps for large areas, mainly due to the increase of the computational cost and due to the uncertainties that become prohibitive when the scenario becomes larger 
-    </p></li>
-  <li><h4>Choice of camera</h4> 
-  <p>RGB-D cameras provide both color images and per pixel depth estimates.  A modern widely used RGB-D sensor is the Kinect. Since the Kinect is not space rated, we have to use an alternate RGB-D sensor. The CubeRover has size and power limitations, due to which, a single monocular camera is prefered. In the future, the CubeRover team has tentative plans to mount a Lidar,  that will provide depth information. In the meantime, we only have a monocular camera to work with. Depth estimation with monocular vision is a project in itself. We plan to use depth maps generated from a Kinect to complete the localization and loop closure systems, and if time permits, address the issue of generating depth maps from a monocular camera. </p></li>
- <li><h4>Dense vs sparse SLAM</h4> 
- <p>At the highest level, there are two variations of SLAM. One involves extracting fixed features from each image frame, and comparing two images using these features (this is sparse SLAM). This is prone to errors mainly due to sparse, self similar features on the moon. The other variation uses all the pixels in two image frames when comparing them (this is dense SLAM). Although it has been shown (confirming suspicions) that dense SLAM is more accurate than sparse SLAM [<a href="#ref">3</a>] [<a href="#ref">4</a>], the dense SLAM problem is computationally much more expensive than the sparse version. For robotics applications, especially ones as sensitive as moon missions, it is imperative to have algorithms that are not only accurate, but also run in real-time.
-</p></li>
-</ul>
-
-<h3>
-<a id="authors-and-contributors" class="anchor" href="#authors-and-contributors" aria-hidden="true"><span class="octicon octicon-link"></span></a>Scope for Parallelism</h3>
-
-<ul> 
-  <li> A lot of computation that is done on the images is inherently parallelizable, because they either involve operations at the pixel level, or they involve linear algebra operations such as matrix and vector arithmetic.</li>
-  <li> The sections of the code for which parallelism is not trivial are those which use iterative algorithms to estimate certain parameters; being iterative, they aren’t intuitively parallelizable. A lot of research and thought has gone into this problem,[<a href="#ref">2</a>] and there are several papers which offer novel suggestions to best exploit avenues for parallelism.</li>
-</ul>
-In attempting to parallelize parts of SLAM, different problems will only become apparent when we try different approaches. Therefore it’s hard to comment on that aspect of the project at this stage
+<p>The accuracy of the heat method depends on the particular choice of spatial discretization, so we need to take convergence into consideration when choosing the appropriate solvers.
+</p>
 
 <!--<p>You can <a href="https://github.com/blog/821" class="user-mention">@mention</a> a GitHub username to generate a link to their profile. The resulting <code>&lt;a&gt;</code> element will link to the contributor's GitHub Profile. For example: In 2007, Chris Wanstrath (<a href="https://github.com/defunkt" class="user-mention">@defunkt</a>), PJ Hyett (<a href="https://github.com/pjhyett" class="user-mention">@pjhyett</a>), and Tom Preston-Werner (<a href="https://github.com/mojombo" class="user-mention">@mojombo</a>) founded GitHub.</p> -->
 
 <h3>
-<a id="authors-and-contributors" class="anchor" href="#authors-and-contributors" aria-hidden="true"><span class="octicon octicon-link"></span></a>Evaluation</h3>
-<ul style="list-style: none;">
-<li><h4>Energy efficiency</h4> 
-  <p>While working with the CubeRover, we need to keep in mind that its entire “mission” is to be done on a single charge. The Tegra K1 is a complete system-on-a-chip. In addition to the 192 CUDA cores, the K1 also has a quad-core ARM-Cortex CPU with SIMD. We think it would be a good idea to compare the performance and energy efficiency of parallelizing the system on the CPU cores and the GPU cores.
-  </p></li>
-<li><h4>Performance evaluation</h4> 
-  <p>We will use <a target="_blank" href ="http://vision.in.tum.de/data/datasets/rgbd-dataset">TU Munich’s RGB-D SLAM benchmark</a> to evaluate the correctness of our tracking. <a target="_blank" href="https://github.com/tum-vision/dvo">TU Munich’s Dense Visual SLAM</a> is a state-of-the-art implementation of SLAM. It has been integrated into Robot Operating System (ROS) software libraries. It is open source, and we intend to benchmark our speed against it.
-  </p></li>
-</ul>
+<a id="authors-and-contributors" class="anchor" href="#authors-and-contributors" aria-hidden="true"><span class="octicon octicon-link"></span></a>Resources</h3>
+  <p>I will start from Professor Crane's paper<a target="_blank" href ="http://www.cs.cmu.edu/~kmcrane/Projects/GeodesicsInHeat/paper.pdf
+">Geodesics in Heat: A New Approach to Computing Distance Based on Heat Flow</a> and the starting code listed at <a target="_blank" href ="http://www.cs.cmu.edu/~kmcrane/Projects/GeodesicsInHeat/index.html
+">its website</a>.
+  </p>
 
 <h3>
-<a id="authors-and-contributors" class="anchor" href="#authors-and-contributors" aria-hidden="true"><span class="octicon octicon-link"></span></a>Stretch Goal</h3>
-<p>As mentioned earlier, depth map estimation is a non-trivial problem [<a href="#ref">5</a>] [<a href="#ref">1</a>]. In the absence of an RGB-D sensor in the CubeRover, we would have to generate depth maps using monocular camera only. Our stretch goal would be to implement a depth map estimation algorithm and GPU/CPU parallelize it.</p>
+<a id="authors-and-contributors" class="anchor" href="#authors-and-contributors" aria-hidden="true"><span class="octicon octicon-link"></span></a>Goals and Deliverables</h3>
+<p>Find all paralleled solvers for inputs of different types; incorporate the iterative scheme of Belyaev & Fayolle from their paper <a target="_blank" href ="http://home.eps.hw.ac.uk/~ab226/papers/pde4dist.pdf
+">On Variational and PDE-Based Distance Function Approximations</a> if have time.
+</p>
+
+<h3>
+<a id="authors-and-contributors" class="anchor" href="#authors-and-contributors" aria-hidden="true"><span class="octicon octicon-link"></span></a>Platform Choice</h3>
+<p>I chose the NVIDIA GPUs in the lab because CUDA is a good tool for paralleled linear solvers.
+</p>
 
 <h3>
 <a id="authors-and-contributors" class="anchor" href="#authors-and-contributors" aria-hidden="true"><span class="octicon octicon-link"></span></a>Schedule</h3>
@@ -80,75 +65,49 @@ In attempting to parallelize parts of SLAM, different problems will only become 
     <tbody>
         <tr>
             <td>1</td>
-            <td nowrap= "nowrap">April 4</td>
+            <td nowrap= "nowrap">April 5</td>
             <td>Setup the working environment </td>
-            <td>Set up the tegra and kinect. Install the required software packages</td>
         </tr>
 
         <tr bgcolor="#f0f0f0">
             <td>2</td>
-            <td nowrap= "nowrap">April 6</td>
-            <td>Initial testing of the benchmarked software</td>
+            <td nowrap= "nowrap">April 12</td>
+            <td>Initial paralleled solvers implementation</td>
             <td></td>
         </tr>
 
         <tr>
-            <td>3*</td>
-            <td nowrap="nowrap">April 20</td>
-            <td>Visual Odometry GPU Implementation</td>
-            <td></td>
-        </tr>
-
-        <tr bgcolor="#f0f0f0">
-            <td>4*</td>
-            <td nowrap="nowrap">April 25</td>
-            <td>Visual Odometry CPU Implementation</td>
-            <td></td>
-        </tr>
-
-        <tr>
-            <td>5</td>
-            <td nowrap="nowrap">April 26 - May 1</td>
+            <td>3</td>
+            <td nowrap="nowrap">April 20 - April 25</td>
             <td>Exam Preparation</td>
             <td></td>
         </tr>
 
         <tr bgcolor="#f0f0f0">
-            <td>6</td>
-            <td nowrap="nowrap">May 2 - May 5</td>
-            <td>Integration</td>
-            <td>Integrating all the modules and testing for correctness and performance. Also, testing on different test data sets</td>
-        </tr>
-
-        <tr>
-            <td>7</td>
-            <td nowrap="nowrap">May 6 - May 7</td>
-            <td>Test for energy consumption</td>
-            <td></td>
+            <td>4</td>
+            <td nowrap="nowrap">April 26 - May 2</td>
+            <td>Improvement</td>
+            <td>Explore methods to improve the accuracy if have time</td>
         </tr>
 
         <tr bgcolor="#f0f0f0">
-            <td>8</td>
-            <td nowrap="nowrap">May 7 - May 11</td>
+            <td>5</td>
+            <td nowrap="nowrap">May 3 - May 7</td>
             <td>Final Product</td>
             <td>Final report, presentation and an attempt at the stretch goal</td>
         </tr>
     </tbody>
 </table>
-<font size = "3"> <i> *Revised schedule</i></font>
 
 <h3>
 <a id="authors-and-contributors" class="anchor" href="#authors-and-contributors" aria-hidden="true"><span class="octicon octicon-link"></span></a>References<a name="ref"></a></h3>
 <ol type="1">
-<li>Engel, J., Sturm, J., Cremers, D.: Semi-dense visual odometry for a monocular camera. In: Intl. Conf. on Computer Vision (ICCV) (2013)</li>
-<li>T. Whelan, H. Johannsson, M. Kaess, J. Leonard, and J. McDonald, "Robust real-time visual odometry for dense RGB-D mapping," in IEEE Intl. Conf. on Robotics and Automation (ICRA), Karlsruhe, Germany, 2013.</li>
-<li>F. Steinbrücker, J. Sturm, and D. Cremers, "Real-time visual odometry from dense RGB-D images," in ICCV Workshop on Live Dense Reconstruction with Moving Cameras, 2011</li>
-<li>Kerl, C., Sturm, J., Cremers, D.: Dense visual SLAM for RGB-D cameras. In: Intl. Conf. on Intelligent Robot Systems (IROS) (2013)</li>
-<li>J. Engel, T. Scho ̈ps, and D. Cremers. LSD-SLAM: Large-scale direct monocular SLAM. In European Conference on Computer Vision (ECCV), September 2014.</li>
+<li>Crane K, Weischedel C, Wardetzky M. Geodesics in heat: A new approach to computing distance based on heat flow[J]. Acm Transactions on Graphics, 2013, 32(5):13-15.</li>
+<li>Belyaev, A. G. and Fayolle, P.-A. (2015), On Variational and PDE-Based Distance Function Approximations. Computer Graphics Forum, 34: 104–118. doi:10.1111/cgf.12611</li>
 </ol>
 
       <footer class="site-footer">
-        <span class="site-footer-owner"><a href="https://github.com/uprasad/CubeRover">CubeRover</a> is maintained by <a href="https://github.com/uprasad">uprasad</a> & <a href="https://github.com/nikithashr">nikithashr</a>.</span>
+        <span class="site-footer-owner"><a href="https://github.com/uprasad/Geodesics in Heat">Geodesics in Heat</a> is maintained by <a href="https://github.com/sushuang9210">Shuang Su</a>.</span>
 
         <span class="site-footer-credits">This page was generated by <a href="https://pages.github.com">GitHub Pages</a> using the <a href="https://github.com/jasonlong/cayman-theme">Cayman theme</a> by <a href="https://twitter.com/jasonlong">Jason Long</a>.</span>
       </footer>
