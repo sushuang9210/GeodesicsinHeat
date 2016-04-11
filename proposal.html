@@ -21,7 +21,9 @@
   <li> Evaluate the vector field</li>
   <li> Solve the Poisson equation </li>
 </ul>
-<p>Among which the first part heat equation and the third part Poisson equation are both linear equations, and therefore could be solved by plugging into a paralleled linear solver. Various paralleled solvers could be adopted according to the inputs. For example the solver for a point cloud may be different from that of triangle meshes. Our goal, therefore, is to find all those paralleled solvers for inputs of different types.
+<p>Among which the first part heat equation and the third part Poisson equation are both linear equations, and therefore could be solved by plugging into a paralleled linear solver. Various paralleled solvers could be adopted according to the inputs. The process of introducing the matrices, however, still needs parallelization. What is more, some iterative scheme may be needed to further improve the accuracy of this method. Our goal is to first solve the parallel problem in introducing the matrices, then use iterative scheme to further improve the method’s accuracy. We would expand the method to other objects like grids and point clouds if have time.
+
+
 </p>
 
 <h3>
@@ -40,13 +42,17 @@
 
 <h3>
 <a id="authors-and-contributors" class="anchor" href="#authors-and-contributors" aria-hidden="true"><span class="octicon octicon-link"></span></a>Goals and Deliverables</h3>
-<p>Find all paralleled solvers for inputs of different types; incorporate the iterative scheme of Belyaev & Fayolle from their paper <a target="_blank" href ="http://home.eps.hw.ac.uk/~ab226/papers/pde4dist.pdf
-">On Variational and PDE-Based Distance Function Approximations</a> if have time.
-</p>
+<ul>
+  <li>Solve the parallel problem in introducing the matrices</li>
+  <li>Incorporate the iterative scheme of Belyaev & Fayolle from their paper <a target="_blank" href ="http://home.eps.hw.ac.uk/~ab226/papers/pde4dist.pdf
+ ">On Variational and PDE-Based Distance Function Approximations</a></li>
+  <li>Expand the method to other objects like grids and point clouds if have time.</li>
+</ul>
+
 
 <h3>
 <a id="authors-and-contributors" class="anchor" href="#authors-and-contributors" aria-hidden="true"><span class="octicon octicon-link"></span></a>Platform Choice</h3>
-<p>I chose the NVIDIA GPUs in the lab because CUDA is a good tool for paralleled linear solvers.
+<p>I chose the NVIDIA GPUs in the lab because the code I'm working on is based on CUDA.
 </p>
 
 <h3>
