@@ -33,7 +33,24 @@
 <h3>
 <a id="authors-and-contributors" class="anchor" href="#authors-and-contributors" aria-hidden="true"><span class="octicon octicon-link"></span></a>Algorithm Specification
 </h3>
-
+<p> The information we need to build up the Laplacian Matrix, the HeatFlowNeumann Matrix, and the HeatFlowDirichlet Matrix are each vertex’s:
+</p>
+<ul>
+  <li>Neighbor numbers</li>
+  <li>Neighbor weights</li>
+</ul>
+<p>The weight of each neighbor could be obtained by summing up its weights on all its neighboring faces. The weight of a vertex on a specific face is (cot\alpha+cot\beta)/2:
+</p>
+<div class = "box" align= "center">
+   <img src="img/triangle.png" />
+ </div>
+ <p>Notice that the information we get from the input file is:</p>
+ <ul>
+   <li>The position and number for each vertex</li>
+   <li>The number of the vertices on each face</li>
+ </ul>
+ <p>The original code collected the information of Neighbor Numbers and Neighbor Weights in the following steps:
+ </p>
 <h3>
 <a id="authors-and-contributors" class="anchor" href="#authors-and-contributors" aria-hidden="true"><span class="octicon octicon-link"></span></a>References<a name="ref"></a></h3>
 <ol type="1">
