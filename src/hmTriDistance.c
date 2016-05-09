@@ -136,12 +136,14 @@ void hmTriDistanceBuild( hmTriDistance* distance )
 
 void hmTriDistanceUpdate( hmTriDistance* distance )
 {
+   size_t i;
    hmTriDistanceStartTiming( distance );
 
    hmTriDistanceStartTiming( distance );
    hmTriDistanceSolveHeatEquation( distance );
    hmTriDistanceStopTiming( distance, "Solve heat equation" );
 
+    for(i=0;i<15;i++){
    hmTriDistanceStartTiming( distance );
    hmTriDistanceComputePotential( distance );
    hmTriDistanceStopTiming( distance, "Compute potential" );
@@ -149,7 +151,8 @@ void hmTriDistanceUpdate( hmTriDistance* distance )
    hmTriDistanceStartTiming( distance );
    hmTriDistanceSolvePoissonEquation( distance );
    hmTriDistanceStopTiming( distance, "Solve Poisson equation" );
-
+   distance->heat = distance->distance.values;
+    }
    hmTriDistanceStopTiming( distance, "Total update time" );
 }
 
@@ -261,6 +264,7 @@ void hmTriDistanceComputePotential( hmTriDistance* distance )
    double *e0, *e1, *e2; /* cotan-weighted edge vectors */
    hmVec3 X; /* normalized gradient */
    double e0DotX, e1DotX, e2DotX;
+   double r=0.0037;
 
    /* initialize potential to zero */
    hmClearArrayDouble( potential, distance->surface->nVertices, 0. );
@@ -295,7 +299,7 @@ void hmTriDistanceComputePotential( hmTriDistance* distance )
          X[0] = u0*t0[0] + u1*t1[0] + u2*t2[0];
          X[1] = u0*t0[1] + u1*t1[1] + u2*t2[1];
          X[2] = u0*t0[2] + u1*t1[2] + u2*t2[2];
-         hmVec3Normalize( X );
+         hmVec3Scale(X,(2+r*hmVec3Norm(X))/((2+r)*hmVec3Norm(X)));
 
          /* add contribution to divergence */
          e0DotX = hmVec3Dot( e0, X );
