@@ -112,7 +112,6 @@ void hmTriDistanceBuild( hmTriDistance* distance )
 
    hmVectorDoubleInitialize( &distance->startTimesProcessor );
    hmVectorDoubleInitialize( &distance->startTimesWallClock );
-   hmTriDistanceStartTiming( distance );
 
    hmDenseMatrixInitialize( &distance->isSource,  nVertices, 1 );
    hmDenseMatrixInitialize( &distance->distance,  nVertices, 1 );
@@ -127,33 +126,22 @@ void hmTriDistanceBuild( hmTriDistance* distance )
    {
       hmDenseMatrixInitialize( &distance->heatDirichlet, nVertices, 1 );
    }
-
+   hmTriDistanceStartTiming( distance );
    hmTriDistanceBuildMatrices( distance );
+   hmTriDistanceStopTiming( distance, "Matrix build time" );
    hmTriDistanceFactorMatrices( distance );
 
-   hmTriDistanceStopTiming( distance, "Total build time" );
 }
 
 void hmTriDistanceUpdate( hmTriDistance* distance )
 {
    size_t i;
-   hmTriDistanceStartTiming( distance );
-
-   hmTriDistanceStartTiming( distance );
    hmTriDistanceSolveHeatEquation( distance );
-   hmTriDistanceStopTiming( distance, "Solve heat equation" );
-
-    for(i=0;i<15;i++){
-   hmTriDistanceStartTiming( distance );
+   for(i=0;i<15;i++){
    hmTriDistanceComputePotential( distance );
-   hmTriDistanceStopTiming( distance, "Compute potential" );
-
-   hmTriDistanceStartTiming( distance );
    hmTriDistanceSolvePoissonEquation( distance );
-   hmTriDistanceStopTiming( distance, "Solve Poisson equation" );
    distance->heat = distance->distance.values;
     }
-   hmTriDistanceStopTiming( distance, "Total update time" );
 }
 
 void hmTriDistanceSolveHeatEquation( hmTriDistance* distance )
