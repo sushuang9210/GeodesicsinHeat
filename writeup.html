@@ -30,27 +30,136 @@
 </p>
 <p>OpenMP and OpenGL have their own characteristics, of which I need to take into consideration when choosing the right one to speed up a specific point.
 </p>
+<p>On Intel Core i7, we have 4 cores with 8 SIMD ALUs per core. That is, 32 SIMD threads in total. However the threads could communicate with each other on OpenMP. On OpenCL, we could have 640 work items in total, which are divided into several work groups. Work items in different work groups can not transfer data to each other.
+</p>
 <h3>
 <a id="authors-and-contributors" class="anchor" href="#authors-and-contributors" aria-hidden="true"><span class="octicon octicon-link"></span></a>Algorithm Specification
 </h3>
-<p> The information we need to build up the Laplacian Matrix, the HeatFlowNeumann Matrix, and the HeatFlowDirichlet Matrix are each vertex’s:
+<p> The final results for the Laplacian Matrix, the HeatFlowNeumann Matrix, and the HeatFlowDirichlet Matrix are listed as an array of data. Each data in the array corresponds to a certain vertex-combination: v<sub>i</sub>v<sub>j</sub>, with i &le j, and v<sub>i</sub>v<sub>j</sub> is an edge of the mesh if i &ne j. The red rectangles shown below is just an example of the corresponding blocks of v<sub>i</sub>v<sub>j</sub>.
 </p>
-<ul>
-  <li>Neighbor numbers</li>
-  <li>Neighbor weights</li>
-</ul>
-<p>The weight of each neighbor could be obtained by summing up its weights on all its neighboring faces. The weight of a vertex on a specific face is (cot\alpha+cot\beta)/2:
+<div class = "box" align= "center">
+   <img src="img/edge.png" />
+ </div>
+ We collect all those rectangles together:
+ <div class = "box" align= "center">
+    <img src="img/combine.png" />
+ </div>
+ <table border="1">
+ <tr>
+ <th>v0v0</th>
+ <th>v0v3</th>
+ <th>v0v6</th>
+ <th>v1v1</th>
+ <th>v2v2</th>
+ <th>v2v5</th>
+ <th>v3v3</th>
+ <th>v4v4</th>
+ <th>v5v5</th>
+ <th>v6v6</th>
+ </tr>
+ <tr>
+ <td>0</td>
+ <td></td>
+ <td></td>
+ <td>3</td>
+ <td>4</td>
+ <td></td>
+ <td>6</td>
+ <td>7</td>
+ <td>8</td>
+ </tr>
+ </table>
+ <p>To assign the values to the matrices by vertices in parallel, we need to know the starting column number of each vertex. Which could be calculated by first finding the number of neighbors(including v<sub>i</sub>v<sub>i</sub>) for each vertex v<sub>i</sub>:
+</p>
+<table border="1">
+<tr>
+<th>v0</th>
+<th>v1</th>
+<th>v2</th>
+<th>v3</th>
+<th>v4</th>
+<th>v5</th>
+<th>v6</th>
+</tr>
+<tr>
+<td>3</td>
+<td>1</td>
+<td>2</td>
+<td>1</td>
+<td>1</td>
+<td>1</td>
+<td>1</td>
+</tr>
+</table>
+<p>Then calculating the corresponding column start using exclusive scan:
+</p>
+<table border="1">
+<tr>
+<th>v0</th>
+<th>v1</th>
+<th>v2</th>
+<th>v3</th>
+<th>v4</th>
+<th>v5</th>
+<th>v6</th>
+</tr>
+<tr>
+<td>0</td>
+<td>3</td>
+<td>4</td>
+<td>6</td>
+<td>7</td>
+<td>8</td>
+<td>9</td>
+</tr>
+</table>
+<p>Since we have >500000 vertices, a certain number of threads may need to be dependent on other threads to run the exclusive scan part. In OpenCL, however, work items in different work groups could not share data with each other. I such chose OpenMP to complete this task.
+</p>
+<div class = "box" align= "center">
+   <img src="img/scan.png" />
+</div>
+<p>We also need each vertex’s vertex weights and vertex faceareas to fill in the values of each column. Both could be obtained by summing up the corresponding face weights and faceareas:
 </p>
 <div class = "box" align= "center">
    <img src="img/triangle.png" />
- </div>
- <p>Notice that the information we get from the input file is:</p>
- <ul>
-   <li>The position and number for each vertex</li>
-   <li>The number of the vertices on each face</li>
- </ul>
- <p>The original code collected the information of Neighbor Numbers and Neighbor Weights in the following steps:
- </p>
+</div>
+<p>FaceWeights=(cot&alpha+cot&beta)/2; FaceArea=(a&chib)/2;
+</p>
+<p>As we traverse through the faces in parallel, each thread(work item) could calculate each faces’s weights&face areas. Such values are then added separately to the 3 vertices of the faces. Race conditions may happen when two threads are trying to access the same vertex.
+</p>
+<p>I tried atomic add at first on both OpenMP and OpenCL, but neither worked. This may be due to the large number of vertex set. I then tried to set lock[nVertices] in OpenMP to give each vertex a lock when it does the adding operation. This, however, does not work either. The number of locks is too large and finding positions takes time. I finally tried lock[100] and assigned each lock [nVertices/100] vertices to monitor. Once one of the vertices is doing the adding operation, the lock is on. The algorithm works this time.
+</p>
+<p>Other parallel parts without race conditions are done with OpenCL which has more workitems(threads) and faster speed.
+</p>
+<p>So basically the final code structure is like:
+</p>
+<p>Loop1:</p>
+<p>Traverse faces in parallel{</p>
+<p>Store neighbors;</p>
+<p>Lock[vertexid/100];</p>
+<p>Calculate&Add face areas to each vertex;</p>
+<p>Calculate&Add face weights to each vertex;</p>
+<p>Unlock[vertexid/100];}</p>
+<p>Loop2:</p>
+<p>Traverse vertices in parallel{</p>
+<p>Sort and combine neighbors by vertex numbers;</p>
+<p>Calculate each vertex’s number of neighbors;}</p>
+<p>Calculate column start using Exclusive Scan;</p>
+<p>Loop3:</p>
+<p>Traverse Vertices in parallel{</p>
+<p>Assign values to matrices according to the column starts;}</p>
+<h3>
+<a id="results" class="anchor" href="#results" aria-hidden="true"><span class="octicon octicon-link"></span></a>Results
+</h3>
+<p>I finally got an acceleration of 16% based on the original code:</p>
+<p>Original:</p>
+<div class = "box" align= "center">
+   <img src="img/result1.png" />
+</div>
+<p>Improved:</p>
+<div class = "box" align= "center">
+   <img src="img/result2.png" />
+</div>
 <h3>
 <a id="authors-and-contributors" class="anchor" href="#authors-and-contributors" aria-hidden="true"><span class="octicon octicon-link"></span></a>References<a name="ref"></a></h3>
 <ol type="1">
