@@ -125,8 +125,8 @@
 <div class = "box" align= "center">
    <img src="img/triangle.png" />
 </div>
-<p>FaceWeights=<img src="http://chart.googleapis.com/chart?cht=tx&chl=\Large (cot \alpha \plus cot \beta)/2" style="border:none;">; FaceArea=<img src="http://chart.googleapis.com/chart?cht=tx&chl=\Large (a \times b)/2" style="border:none;">;
-</p>
+<p>FaceWeights=<img src="http://chart.googleapis.com/chart?cht=tx&chl=\Large (cot \alpha" style="border:none;">+<img src="http://chart.googleapis.com/chart?cht=tx&chl=\Large cot \beta)/2" style="border:none;">; FaceArea=<img src="http://chart.googleapis.com/chart?cht=tx&chl=\Large (a \times b)/2" style="border:none;">;
+</p> 
 <p>As we traverse through the faces in parallel, each thread(work item) could calculate each faces’s weights&face areas. Such values are then added separately to the 3 vertices of the faces. Race conditions may happen when two threads are trying to access the same vertex.
 </p>
 <p>I tried atomic add at first on both OpenMP and OpenCL, but neither worked. This may be due to the large number of vertex set. I then tried to set lock[nVertices] in OpenMP to give each vertex a lock when it does the adding operation. This, however, does not work either. The number of locks is too large and finding positions takes time. I finally tried lock[100] and assigned each lock [nVertices/100] vertices to monitor. Once one of the vertices is doing the adding operation, the lock is on. The algorithm works this time.
