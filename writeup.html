@@ -7,7 +7,7 @@
 <h3>Summary of Contributions</h3>
 
 
-<p>I realized the parallel implementation of the Geodesics in Heat Method taking advantages of both CPU(using OpenMP) and GPU(using OpenGL) on Mac, achieving a 16% speed up. Techniques like SIMD, atomic operations, exclusive-scan, lock and dense matrix have been attempted and carefully chosen. More things about Geodesics in Heat could be found on Professor Crane's <a target="_blank" href ="http://www.cs.cmu.edu/~kmcrane/Projects/GeodesicsInHeat/index.html
+<p>I realized the paralleled implementation of the Geodesics in Heat Method taking advantages of both CPU(using OpenMP) and GPU(using OpenGL) on Mac, achieving a 16% speed up. Techniques like SIMD, atomic operations, exclusive-scan, lock and dense matrix have been attempted and carefully chosen. More things about Geodesics in Heat could be found on Professor Crane's <a target="_blank" href ="http://www.cs.cmu.edu/~kmcrane/Projects/GeodesicsInHeat/index.html
 ">website</a>, and a basic <a target="_blank" href ="https://drive.google.com/file/d/0B4N9CDlARzhUTThPNHlaTms4V3M/view?usp=sharing
 ">introduction</a> I have written myself.
 </p>
@@ -20,24 +20,24 @@
 <ul>
   <li>Read information from input files</li>
   <li>Build up the information needed for the heat method</li>
-  <li>Executing the kernel functions</li>
-  <li>Writing results to output files</li>
-  <li>Comparing with reference distances</li>
+  <li>Execute the kernel functions</li>
+  <li>Write results to output files</li>
+  <li>Compared with reference distances</li>
 </ul>
-<p>Now that we have the HSL_MA87 library to parallel the hmTriDistanceUpdate()(kernel function), my main goal is to speed up the process of preparing the matrixes for the kernel functions. That is, to parallel the step2 Build-up-information part.
+<p>Now that we have <a target="_blank" href ="http://www.hsl.rl.ac.uk/">the HSL_MA87 library</a> to parallel the kernel function(hmTriDistanceUpdate()), my main goal is to speed up the process of preparing the matrixes for the kernel functions. That is, to parallel the step2 Build-up-information part.
 </p>
 <h3>
 <a id="rather-drive-stick" class="anchor" href="#rather-drive-stick" aria-hidden="true"><span class="octicon octicon-link"></span></a>Platform Choice</h3>
-<p>I worked on Intel Core I7 and AMD Radeon R9, which provide CPU(using OpenMP) and GPU(using OpenGL) platforms respectively. Both OpenMP and OpenGL have a large range of hardwares to work on, making the source code easy to transplant on other machines.
+<p>I worked on Intel Core I7 and AMD Radeon R9, which provide CPU(using OpenMP) and GPU(using OpenGL) platforms respectively. Both OpenMP and OpenGL have a large range of hardwares to work on, making the source code easy to be transplanted on other machines.
 </p>
 <p>OpenMP and OpenGL have their own characteristics, of which I need to take into consideration when choosing the right one to speed up a specific point.
 </p>
-<p>On Intel Core i7, we have 4 cores with 8 SIMD ALUs per core. That is, 32 SIMD threads in total. However the threads could communicate with each other on OpenMP. On OpenCL, we could have 640 work items in total, which are divided into several work groups. Work items in different work groups can not transfer data to each other.
+<p>On Intel Core i7, we have 4 cores with 8 SIMD ALUs per core. That is, 32 SIMD threads in total. <b>However the threads could communicate with each other on OpenMP.</b> On OpenCL, we could have 640 work items in total, which are divided into several work groups. <b>Work items in different work groups can not transfer data to each other.</b>
 </p>
 <h3>
 <a id="authors-and-contributors" class="anchor" href="#authors-and-contributors" aria-hidden="true"><span class="octicon octicon-link"></span></a>Algorithm Specification
 </h3>
-<p> The final results for the Laplacian Matrix, the HeatFlowNeumann Matrix, and the HeatFlowDirichlet Matrix are listed as an array of data. Each data in the array corresponds to a certain vertex-combination: v<sub>i</sub>v<sub>j</sub>, with i &le j, and v<sub>i</sub>v<sub>j</sub> is an edge of the mesh if i &ne j. The red rectangles shown below is just an example of the corresponding blocks of v<sub>i</sub>v<sub>j</sub>.
+<p> The final results for the Laplacian Matrix, the HeatFlowNeumann Matrix, and the HeatFlowDirichlet Matrix are listed as an array of data. Each data in the array corresponds to a certain vertex-combination: v<sub>i</sub>v<sub>j</sub>, with <img src="http://chart.googleapis.com/chart?cht=tx&chl=\Large i \leq j" style="border:none;">, and v<sub>i</sub>v<sub>j</sub> is an edge of the mesh if <img src="http://chart.googleapis.com/chart?cht=tx&chl=\Large i \ne j" style="border:none;">. The red rectangles shown below is just an example of the corresponding blocks of v<sub>i</sub>v<sub>j</sub>.
 </p>
 <div class = "box" align= "center">
    <img src="img/edge.png" />
