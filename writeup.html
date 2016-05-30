@@ -39,13 +39,17 @@
 </h3>
 <p> The final results for the Laplacian Matrix, the HeatFlowNeumann Matrix, and the HeatFlowDirichlet Matrix are listed as an array of data. Each data in the array corresponds to a certain vertex-combination: v<sub>i</sub>v<sub>j</sub>, with <img src="http://chart.googleapis.com/chart?cht=tx&chl=\Large i \leq j" style="border:none;">, and v<sub>i</sub>v<sub>j</sub> is an edge of the mesh if <img src="http://chart.googleapis.com/chart?cht=tx&chl=\Large i \ne j" style="border:none;">. The red rectangles shown below is just an example of the corresponding blocks of v<sub>i</sub>v<sub>j</sub>.
 </p>
+<p>
 <div class = "box" align= "center">
    <img src="img/edge.png" />
  </div>
+ </p>
  We collect all those rectangles together:
+ <p>
  <div class = "box" align= "center">
     <img src="img/combine.png" />
  </div>
+ </p>
  <table border="1" align="center" style="width:100%">
  <tr>
  <th>v0v0</th>
@@ -117,14 +121,18 @@
 </table>
 <p>Since we have >500000 vertices, a certain number of threads may need to be dependent on other threads to run the exclusive scan part. In OpenCL, however, work items in different work groups could not share data with each other. I such chose OpenMP to complete this task.
 </p>
+<p>
 <div class = "box" align= "center">
    <img src="img/scan.png" />
 </div>
+</p>
 <p>We also need each vertex’s vertex weights and vertex faceareas to fill in the values of each column. Both could be obtained by summing up the corresponding face weights and faceareas:
 </p>
+<p>
 <div class = "box" align= "center">
    <img src="img/triangle.png" />
 </div>
+</p>
 <p>FaceWeights=<img src="http://chart.googleapis.com/chart?cht=tx&chl=\Large (cot \alpha" style="border:none;">+<img src="http://chart.googleapis.com/chart?cht=tx&chl=\Large cot \beta)/2" style="border:none;">; FaceArea=<img src="http://chart.googleapis.com/chart?cht=tx&chl=\Large (a \times b)/2" style="border:none;">;
 </p>
 <p>As we traverse through the faces in parallel, each thread(work item) could calculate each faces’s weights&face areas. Such values are then added separately to the 3 vertices of the faces. Race conditions may happen when two threads are trying to access the same vertex.
@@ -155,13 +163,17 @@
 </h3>
 <p>I finally got an acceleration of 16% based on the original code:</p>
 <p>Original:</p>
+<p>
 <div class = "box" align= "center">
    <img src="img/result1.png" />
 </div>
+</p>
 <p>Improved:</p>
+<p>
 <div class = "box" align= "center">
    <img src="img/result2.png" />
 </div>
+</p>
 <h3>
 <a id="designer2" class="anchor" href="#designer2" aria-hidden="true"><span class="octicon octicon-link"></span></a>Further Implement--Iterative Scheme
 </h3>
@@ -170,13 +182,17 @@ Given u, its normalization X= coincides with n= on . On the other hand,  is the 
 I obtained an error rate of 0.414% based on the original 0.465% by setting r=0.0037 iteration=15 on the kitten sample:
 </p>
 <p>Original:</p>
+<p>
 <div class = "box" align= "center">
    <img src="img/result3.png" />
 </div>
+</p>
 <p>Improved:</p>
+<p>
 <div class = "box" align= "center">
    <img src="img/result4.png" />
 </div>
+</p>
 <h3>
 <a id="authors-and-contributors" class="anchor" href="#authors-and-contributors" aria-hidden="true"><span class="octicon octicon-link"></span></a>References<a name="ref"></a></h3>
 <ol type="1">
