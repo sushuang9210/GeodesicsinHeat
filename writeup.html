@@ -156,21 +156,24 @@
 </p>
 <p>So basically the final code structure is like:
 </p>
-<p>Loop1:</p>
-<p>Traverse faces in parallel{</p>
+<p><b>Loop1:</b></p>
+<p>TRAVERSE FACES IN PARALLEL</p>
 <p>Store neighbors;</p>
 <p>Lock[vertexid/100];</p>
 <p>Calculate&Add face areas to each vertex;</p>
 <p>Calculate&Add face weights to each vertex;</p>
 <p>Unlock[vertexid/100];}</p>
-<p>Loop2:</p>
-<p>Traverse vertices in parallel{</p>
+<p></p>
+<p><b>Loop2:</b></p>
+<p>TRAVERSE VERTICES IN PARALLEL</p>
 <p>Sort and combine neighbors by vertex numbers;</p>
-<p>Calculate each vertex’s number of neighbors;}</p>
-<p>Calculate column start using Exclusive Scan;</p>
-<p>Loop3:</p>
-<p>Traverse Vertices in parallel{</p>
-<p>Assign values to matrices according to the column starts;}</p>
+<p>Calculate each vertex’s number of neighbors;</p>
+<p></p>
+<p><b>Calculate column start using Exclusive Scan;</b></p>
+<p></p>
+<p><b>Loop3:</b></p>
+<p>TRAVERSE VERTICES IN PARALLEL</p>
+<p>Assign values to matrices according to the column starts;</p>
 <h3>
 <a id="results" class="anchor" href="#results" aria-hidden="true"><span class="octicon octicon-link"></span></a>Results
 </h3>
