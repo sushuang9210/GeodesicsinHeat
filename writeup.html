@@ -1,0 +1,231 @@
+
+
+    <section class="main-content">
+      <h2>
+<a id="welcome-to-github-pages" class="anchor" href="#welcome-to-github-pages" aria-hidden="true"><span class="octicon octicon-link"></span></a><b>Writeup</b></h2>
+
+<h3>Summary of Contributions</h3>
+
+
+<p>I realized the paralleled implementation of the Geodesics in Heat Method taking advantages of both CPU(using OpenMP) and GPU(using OpenGL) on Mac, achieving a 16% speed up. Techniques like SIMD, atomic operations, exclusive-scan, lock and dense matrix have been attempted and carefully chosen. More things about Geodesics in Heat could be found on Professor Crane's <a target="_blank" href ="http://www.cs.cmu.edu/~kmcrane/Projects/GeodesicsInHeat/index.html
+">website</a>, and a basic <a target="_blank" href ="https://drive.google.com/file/d/0B4N9CDlARzhUTThPNHlaTms4V3M/view?usp=sharing
+">introduction</a> I have written myself.
+</p>
+
+<h3>
+<a id="designer-templates" class="anchor" href="#designer-templates" aria-hidden="true"><span class="octicon octicon-link"></span></a>Code Structure and Speed up Focus
+</h3>
+<p>The whole process of the algorithm could be divided into the following 5 parts:
+</p>
+<ul>
+  <li>Read information from input files</li>
+  <li>Build up the information needed for the heat method</li>
+  <li>Execute the kernel functions</li>
+  <li>Write results to output files</li>
+  <li>Compared with reference distances</li>
+</ul>
+<p>Now that we have <a target="_blank" href ="http://www.hsl.rl.ac.uk/">the HSL_MA87 library</a> to parallel the kernel function(hmTriDistanceUpdate()), my main goal is to speed up the process of preparing the matrixes for the kernel functions. That is, to parallel the step2 Build-up-information part.
+</p>
+<h3>
+<a id="rather-drive-stick" class="anchor" href="#rather-drive-stick" aria-hidden="true"><span class="octicon octicon-link"></span></a>Platform Choice</h3>
+<p>I worked on Intel Core I7 and AMD Radeon R9, which provide CPU(using OpenMP) and GPU(using OpenGL) platforms respectively. Both OpenMP and OpenGL have a large range of hardwares to work on, making the source code easy to be transplanted on other machines.
+</p>
+<p>OpenMP and OpenGL have their own characteristics, of which I need to take into consideration when choosing the right one to speed up a specific point.
+</p>
+<p>On Intel Core i7, we have 4 cores with 8 SIMD ALUs per core. That is, 32 SIMD threads in total. <b>However the threads could communicate with each other on OpenMP.</b> On OpenCL, we could have 640 work items in total, which are divided into several work groups. <b>Work items in different work groups can not transfer data to each other.</b>
+</p>
+<h3>
+<a id="authors-and-contributors" class="anchor" href="#authors-and-contributors" aria-hidden="true"><span class="octicon octicon-link"></span></a>Algorithm Specification
+</h3>
+<p> The final results for the Laplacian Matrix, the HeatFlowNeumann Matrix, and the HeatFlowDirichlet Matrix are listed as an array of data. Each data in the array corresponds to a certain vertex-combination: v<sub>i</sub>v<sub>j</sub>, with <img src="http://chart.googleapis.com/chart?cht=tx&chl=\Large i \leq j" style="border:none;">, and v<sub>i</sub>v<sub>j</sub> is an edge of the mesh if <img src="http://chart.googleapis.com/chart?cht=tx&chl=\Large i \ne j" style="border:none;">. The red rectangles shown below is just an example of the corresponding blocks of v<sub>i</sub>v<sub>j</sub>.
+</p>
+<p>
+<div class = "box" align= "center">
+   <img src="img/edge.png" />
+ </div>
+ </p>
+ We collect all those rectangles together:
+ <p>
+ <div class = "box">
+    <img src="img/combine.png" />
+ </div>
+ </p>
+ <table class = "table table-bordered" align= "center">
+<thead>
+ <tr>
+ <th>v0v0</th>
+ <th>v0v3</th>
+ <th>v0v6</th>
+ <th>v1v1</th>
+ <th>v2v2</th>
+ <th>v2v5</th>
+ <th>v3v3</th>
+ <th>v4v4</th>
+ <th>v5v5</th>
+ <th>v6v6</th>
+ </tr>
+ </thead>
+ <tbody>
+ <tr>
+ <td>0</td>
+ <td></td>
+ <td></td>
+ <td>3</td>
+ <td>4</td>
+ <td></td>
+ <td>6</td>
+ <td>7</td>
+ <td>8</td>
+ <td></td>
+ </tr>
+ </tbody>
+ </table>
+ <p>To assign the values to the matrices by vertices in parallel, we need to know the starting column number of each vertex. Which could be calculated by first finding the number of neighbors(including v<sub>i</sub>v<sub>i</sub>) for each vertex v<sub>i</sub>:
+</p>
+<table class = "table table-bordered" align= "center">
+<thead>
+<tr>
+<th>v0</th>
+<th>v1</th>
+<th>v2</th>
+<th>v3</th>
+<th>v4</th>
+<th>v5</th>
+<th>v6</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>3</td>
+<td>1</td>
+<td>2</td>
+<td>1</td>
+<td>1</td>
+<td>1</td>
+<td>1</td>
+</tr>
+</tbody>
+</table>
+<p>Then calculating the corresponding column start using exclusive scan:
+</p>
+<table class = "table table-bordered" align= "center">
+<thead>
+<tr>
+<th>v0</th>
+<th>v1</th>
+<th>v2</th>
+<th>v3</th>
+<th>v4</th>
+<th>v5</th>
+<th>v6</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0</td>
+<td>3</td>
+<td>4</td>
+<td>6</td>
+<td>7</td>
+<td>8</td>
+<td>9</td>
+</tr>
+</tbody>
+</table>
+<p>Since we have >500000 vertices, a certain number of threads may need to be dependent on other threads to run the exclusive scan part. In OpenCL, however, work items in different work groups could not share data with each other. I such chose OpenMP to complete this task.
+</p>
+<p>
+<div class = "box" align= "center">
+   <img src="img/scan.png" />
+</div>
+</p>
+<p>We also need each vertex’s vertex weights and vertex faceareas to fill in the values of each column. Both could be obtained by summing up the corresponding face weights and faceareas:
+</p>
+<p>
+<div class = "box" align= "center">
+   <img src="img/triangle.png" />
+</div>
+</p>
+<p>FaceWeights=<img src="http://chart.googleapis.com/chart?cht=tx&chl=\Large (cot \alpha %2B \Large cot \beta)/2" style="border:none;">; FaceArea=<img src="http://chart.googleapis.com/chart?cht=tx&chl=\Large (a \times b)/2" style="border:none;">;
+</p>
+<p>As we traverse through the faces in parallel, each thread(work item) could calculate each faces’s weights&face areas. Such values are then added separately to the 3 vertices of the faces. Race conditions may happen when two threads are trying to access the same vertex.
+</p>
+<p>I tried atomic add at first on both OpenMP and OpenCL, but neither worked. This may be due to the large number of vertex set. I then tried to set lock[nVertices] in OpenMP to give each vertex a lock when it does the adding operation. This, however, does not work either. The number of locks is too large and finding positions takes time. I finally tried lock[100] and assigned each lock [nVertices/100] vertices to monitor. Once one of the vertices is doing the adding operation, the lock is on. The algorithm works this time.
+</p>
+<p>Other parallel parts without race conditions are done with OpenCL which has more workitems(threads) and faster speed.
+</p>
+<p>So basically the final code structure is like:
+</p>
+<p><b>Loop1:</b></p>
+<p>TRAVERSE FACES IN PARALLEL</p>
+<ul>
+<li>Store neighbors;</li>
+<li>Lock[vertexid/100];</li>
+<li>Calculate&Add face areas to each vertex;</li>
+<li>Calculate&Add face weights to each vertex;</li>
+<li>Unlock[vertexid/100];</li>
+</ul>
+
+<p><b>Loop2:</b></p>
+<p>TRAVERSE VERTICES IN PARALLEL</p>
+<ul>
+<li>Sort and combine neighbors by vertex numbers;</li>
+<li>Calculate each vertex’s number of neighbors;</li>
+</ul>
+
+<p><b>Calculate column start using Exclusive Scan;</b></p>
+
+<p><b>Loop3:</b></p>
+<p>TRAVERSE VERTICES IN PARALLEL</p>
+<ul>
+<li>Assign values to matrices according to the column starts;</li>
+</ul>
+<h3>
+<a id="results" class="anchor" href="#results" aria-hidden="true"><span class="octicon octicon-link"></span></a>Results
+</h3>
+<p>I finally got an acceleration of 16% based on the original code:</p>
+<p>Original:</p>
+<p>
+<div class = "box" align= "center">
+   <img src="img/result1.png" />
+</div>
+</p>
+<p>Improved:</p>
+<p>
+<div class = "box" align= "center">
+   <img src="img/result2.png" />
+</div>
+</p>
+<h3>
+<a id="designer2" class="anchor" href="#designer2" aria-hidden="true"><span class="octicon octicon-link"></span></a>Further Implement--Iterative Scheme
+</h3>
+<p>I now do the algorithm in an iterative way. In each new iteration, replace the heat equation u with <img src="http://chart.googleapis.com/chart?cht=tx&chl=\Large c \cdot \nabla \phi" style="border:none;">, where <img src="http://chart.googleapis.com/chart?cht=tx&chl=\Large c=\frac{2 %2B r|\nabla \phi|}{(2 %2B r)|\nabla \phi|}" style="border:none;">.
+Given u, its normalization <img src="http://chart.googleapis.com/chart?cht=tx&chl=\Large X=-\nabla u/|\nabla u|" style="border:none;"> coincides with <img src="http://chart.googleapis.com/chart?cht=tx&chl=\Large n=\nabla u" style="border:none;"> on <img src="http://chart.googleapis.com/chart?cht=tx&chl=\Large n=\partial \Omega" style="border:none;">. On the other hand, <img src="http://chart.googleapis.com/chart?cht=tx&chl=\Large n=\partial \phi" style="border:none;"> is the solution to <img src="http://chart.googleapis.com/chart?cht=tx&chl=\Large \int_{\Omega}|\partial \phi-X|^{2}dx \to min" style="border:none;">. Thus, <img src="http://chart.googleapis.com/chart?cht=tx&chl=\Large u \to X=-\nabla u/|\nabla u|" style="border:none;"> reduces the approximation error near <img src="http://chart.googleapis.com/chart?cht=tx&chl=\Large \Omega" style="border:none;">. The parameter r is an adjusting variable.
+I obtained an error rate of 0.414% based on the original 0.465% by setting r=0.0037 iteration=15 on the kitten sample:
+</p>
+<p>Original:</p>
+<p>
+<div class = "box" align= "center">
+   <img src="img/result3.png" />
+</div>
+</p>
+<p>Improved:</p>
+<p>
+<div class = "box" align= "center">
+   <img src="img/result4.png" />
+</div>
+</p>
+<h3>
+<a id="authors-and-contributors" class="anchor" href="#authors-and-contributors" aria-hidden="true"><span class="octicon octicon-link"></span></a>References<a name="ref"></a></h3>
+<ol type="1">
+<li>Crane K, Weischedel C, Wardetzky M. Geodesics in heat: A new approach to computing distance based on heat flow[J]. Acm Transactions on Graphics.</li>
+<li>Belyaev, A. G. and Fayolle, P.-A. (2015), On Variational and PDE-Based Distance Function Approximations. Computer Graphics Forum.</li>
+</ol>
+
+      <footer class="site-footer">
+      <span class="site-footer-owner"><a href="https://github.com/sushuang9210/GeodesicsinHeat">Geodesics in Heat</a> is maintained by <a href="https://github.com/sushuang9210">Shuang Su</a>.</span>
+
+        <span class="site-footer-credits">This page was generated by <a href="https://pages.github.com">GitHub Pages</a> using the <a href="https://github.com/jasonlong/cayman-theme">Cayman theme</a> by <a href="https://twitter.com/jasonlong">Jason Long</a>.</span>
+      </footer>
+
+    </section>
