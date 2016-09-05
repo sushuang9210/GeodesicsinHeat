@@ -15,11 +15,20 @@
 
 		<script type="text/javascript">
 		$(document).ready(function() {
-			$("#body").load("work.html");
+			$("#body").load("writeup.html");
 
-      $("#work").click(function() {
-        $("#body").load("work.html");
+			$("#progress").click(function() {
+				$("#body").load("progress.html");
+			});
+
+
+      $("#writeup").click(function() {
+        $("#body").load("writeup.html");
       });
+
+			$("#proposal").click(function() {
+				$("#body").load("proposal.html");
+			});
 		});
 
 		</script>
@@ -35,10 +44,12 @@
   </head>
   <body>
     <section class="page-header">
-      <h1 class="project-name">Kinect Data Extraction and Visualization</h1>
-      <h2 class="project-tagline">2014 Summer Internship Project at MIT</h2>
-      <a id="proposal" href="#" class="btn">Work</a>
-      <a target="_blank" href="https://github.com/sushuang9210/PlaywithKinect" class="btn">View on GitHub</a>
+      <h1 class="project-name">Geodesics in Heat</h1>
+      <h2 class="project-tagline">15-418 Final Project</h2>
+      <a id="proposal" href="#" class="btn">Proposal</a>
+      <a id="writeup" href="#" class="btn">Writeup</a>
+      <a id="progress" href="#" class="btn">Project Checkpoint</a>
+      <a target="_blank" href="https://github.com/sushuang9210/GeodesicsinHeat" class="btn">View on GitHub</a>
 	  <!--
       <a href="https://github.com/sushuang9210/Geodesics in Heat/zipball/master" class="btn">Download .zip</a>
       <a href="https://github.com/sushuang9210/Geodesics in Heat/tarball/master" class="btn">Download .tar.gz</a>
